@@ -8,7 +8,7 @@ from io import StringIO
 from pathlib import Path
 
 import pandas as pd
-from dash import Input, Output, State, callback_context, dcc, html
+from dash import Input, Output, State, callback_context, dcc, html, no_update
 from dash.exceptions import PreventUpdate
 
 from src.anomaly_detection import detect_anomalies
@@ -75,6 +75,8 @@ def register_callbacks(app) -> None:
         Output("stat-edges", "children"),
         Output("stat-avg-degree", "children"),
         Output("stat-density", "children"),
+        Output("upload-error", "children"),
+        Output("upload-error", "is_open"),
         Input("run-detection", "n_clicks"),
         Input("upload-data", "contents"),
         Input("directed-toggle", "value"),
@@ -87,10 +89,22 @@ def register_callbacks(app) -> None:
         triggered = callback_context.triggered_id
         directed = bool(directed)
         if contents and filename and filename.lower().endswith(".csv"):
-            content_type, content_string = contents.split(",", 1)
-            decoded = base64.b64decode(content_string)
-            frame = pd.read_csv(BytesIO(decoded))
-            payload = _build_payload(frame, directed=directed)
+            try:
+                content_type, content_string = contents.split(",", 1)
+                decoded = base64.b64decode(content_string)
+                frame = pd.read_csv(BytesIO(decoded))
+                payload = _build_payload(frame, directed=directed)
+            except (ValueError, pd.errors.ParserError) as exc:
+                return (
+                    no_update,
+                    no_update,
+                    no_update,
+                    no_update,
+                    no_update,
+                    no_update,
+                    f"Could not load '{filename}': {exc}",
+                    True,
+                )
         elif triggered == "upload-data" and contents:
             raise PreventUpdate
         else:
@@ -107,6 +121,8 @@ def register_callbacks(app) -> None:
             f"{stats['edges']}",
             f"{stats['average_degree']:.2f}",
             f"{stats['density']:.3f}",
+            "",
+            False,
         )
 
     @app.callback(

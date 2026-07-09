@@ -39,6 +39,12 @@ def sidebar_controls() -> dbc.Card:
                     style={"cursor": "pointer"},
                     multiple=False,
                 ),
+                dbc.Alert(
+                    id="upload-error",
+                    color="danger",
+                    is_open=False,
+                    className="mb-3 py-2 small",
+                ),
                 dbc.Switch(
                     id="directed-toggle",
                     label="Directed graph",
