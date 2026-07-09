@@ -28,6 +28,9 @@ from src.visualization import (
 )
 
 
+MAX_UPLOAD_NODES = 750
+
+
 def _default_dataset_path() -> Path:
     return Path("data/sample_network.csv")
 
@@ -94,6 +97,21 @@ def register_callbacks(app) -> None:
                 decoded = base64.b64decode(content_string)
                 frame = pd.read_csv(BytesIO(decoded))
                 payload = _build_payload(frame, directed=directed)
+                if payload["statistics"]["nodes"] > MAX_UPLOAD_NODES:
+                    return (
+                        no_update,
+                        no_update,
+                        no_update,
+                        no_update,
+                        no_update,
+                        no_update,
+                        (
+                            f"'{filename}' has {payload['statistics']['nodes']} devices, "
+                            f"which exceeds the {MAX_UPLOAD_NODES}-node limit for interactive "
+                            "rendering. Use a smaller dataset."
+                        ),
+                        True,
+                    )
             except (ValueError, pd.errors.ParserError) as exc:
                 return (
                     no_update,
