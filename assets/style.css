@@ -1,0 +1,135 @@
+:root {
+  --bg: #07111f;
+  --panel: #0d1b2a;
+  --panel-alt: #12263d;
+  --border: #20344f;
+  --text: #e5eef9;
+  --muted: #8fa8c2;
+  --accent: #3da9fc;
+  --warning: #ffd166;
+  --danger: #ff5c7a;
+  --success: #00d4a6;
+}
+
+html, body {
+  background:
+    radial-gradient(circle at top left, rgba(61, 169, 252, 0.10), transparent 30%),
+    radial-gradient(circle at top right, rgba(255, 92, 122, 0.08), transparent 28%),
+    linear-gradient(180deg, #05101d 0%, #07111f 55%, #06101b 100%);
+  color: var(--text);
+  font-family: Inter, "Segoe UI", system-ui, sans-serif;
+}
+
+.app-shell {
+  min-height: 100vh;
+}
+
+.top-banner {
+  background: linear-gradient(135deg, rgba(13, 27, 42, 0.9), rgba(18, 38, 61, 0.8));
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.24);
+}
+
+.title-mark {
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+  font-size: 0.8rem;
+}
+
+.glass-card {
+  background: rgba(13, 27, 42, 0.88);
+  border: 1px solid rgba(32, 52, 79, 0.9);
+  border-radius: 18px;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(10px);
+}
+
+.card-title {
+  color: var(--muted);
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.metric-value {
+  font-size: 1.65rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.metric-label {
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.sidebar-panel,
+.panel-shell {
+  background: rgba(13, 27, 42, 0.92);
+  border: 1px solid rgba(32, 52, 79, 0.9);
+  border-radius: 18px;
+}
+
+.section-header {
+  color: var(--text);
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+}
+
+.control-label {
+  color: var(--muted);
+  font-size: 0.86rem;
+  margin-bottom: 0.35rem;
+}
+
+.dash-dropdown .Select-control,
+.dash-dropdown .Select-menu-outer,
+.dash-dropdown .Select-value-label,
+.dash-dropdown .Select input {
+  background-color: #102238 !important;
+  color: var(--text) !important;
+  border-color: var(--border) !important;
+}
+
+.cy-container {
+  height: 72vh;
+  min-height: 620px;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid rgba(32, 52, 79, 0.95);
+}
+
+.right-panel,
+.bottom-panel {
+  border-radius: 18px;
+}
+
+.node-note {
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+.table-shell {
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.dash-table-container .dash-spreadsheet-container .dash-spreadsheet-inner {
+  background-color: transparent !important;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #3da9fc, #2066f0);
+  border: none;
+}
+
+.btn-outline-light {
+  border-color: rgba(229, 238, 249, 0.25);
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+

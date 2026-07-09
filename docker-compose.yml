@@ -1,0 +1,8 @@
+services:
+  graph-anomaly-detection:
+    build: .
+    ports:
+      - "8050:8050"
+    environment:
+      - PYTHONUNBUFFERED=1
+
