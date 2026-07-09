@@ -39,6 +39,12 @@ def sidebar_controls() -> dbc.Card:
                     style={"cursor": "pointer"},
                     multiple=False,
                 ),
+                dbc.Switch(
+                    id="directed-toggle",
+                    label="Directed graph",
+                    value=False,
+                    className="mb-3",
+                ),
                 html.Div("Algorithm selector", className="control-label"),
                 dcc.Dropdown(
                     id="algorithm-select",

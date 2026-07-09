@@ -39,8 +39,8 @@ def _read_json_frame(payload: str | None) -> pd.DataFrame:
     return pd.read_json(StringIO(payload), orient="records")
 
 
-def _build_payload(frame: pd.DataFrame, directed: bool) -> dict:
-    network = load_network_data(frame)
+def _build_payload(source: str | Path | pd.DataFrame, directed: bool) -> dict:
+    network = load_network_data(source)
     build_result = build_graph(network, directed=directed)
     metrics = compute_node_metrics(build_result.graph, build_result.edge_frame)
     stats = compute_graph_statistics(build_result.graph)
@@ -58,26 +58,11 @@ def _build_payload(frame: pd.DataFrame, directed: bool) -> dict:
     }
 
 
-def _load_default_payload() -> dict | None:
+def _load_default_payload(directed: bool) -> dict | None:
     path = _default_dataset_path()
     if not path.exists():
         return None
-    frame = load_network_data(path)
-    build_result = build_graph(frame, directed=False)
-    metrics = compute_node_metrics(build_result.graph, build_result.edge_frame)
-    stats = compute_graph_statistics(build_result.graph)
-    return {
-        "edges": dataframe_to_json(build_result.edge_frame),
-        "metrics": dataframe_to_json(metrics),
-        "statistics": {
-            "nodes": stats.nodes,
-            "edges": stats.edges,
-            "average_degree": stats.average_degree,
-            "density": stats.density,
-            "connected_components": stats.connected_components,
-        },
-        "directed": False,
-    }
+    return _build_payload(path, directed)
 
 
 def register_callbacks(app) -> None:
@@ -92,22 +77,24 @@ def register_callbacks(app) -> None:
         Output("stat-density", "children"),
         Input("run-detection", "n_clicks"),
         Input("upload-data", "contents"),
+        Input("directed-toggle", "value"),
         State("upload-data", "filename"),
         State("algorithm-select", "value"),
         State("threshold-slider", "value"),
         prevent_initial_call=False,
     )
-    def load_or_run(n_clicks, contents, filename, algorithm, threshold):
+    def load_or_run(n_clicks, contents, directed, filename, algorithm, threshold):
         triggered = callback_context.triggered_id
+        directed = bool(directed)
         if contents and filename and filename.lower().endswith(".csv"):
             content_type, content_string = contents.split(",", 1)
             decoded = base64.b64decode(content_string)
             frame = pd.read_csv(BytesIO(decoded))
-            payload = _build_payload(frame, directed=False)
+            payload = _build_payload(frame, directed=directed)
         elif triggered == "upload-data" and contents:
             raise PreventUpdate
         else:
-            payload = _load_default_payload()
+            payload = _load_default_payload(directed)
 
         if payload is None:
             raise PreventUpdate
