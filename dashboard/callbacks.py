@@ -158,8 +158,9 @@ def register_callbacks(app) -> None:
         Input("anomalies-store", "data"),
         Input("layout-select", "value"),
         Input("selected-node-store", "data"),
+        Input("color-mode-select", "value"),
     )
-    def refresh_visuals(network_payload, metrics_json, anomalies_json, layout_name, selected_node):
+    def refresh_visuals(network_payload, metrics_json, anomalies_json, layout_name, selected_node, color_mode):
         if not network_payload or not metrics_json or not anomalies_json:
             raise PreventUpdate
 
@@ -171,7 +172,7 @@ def register_callbacks(app) -> None:
         if selected_node:
             highlighted.append(str(selected_node))
         elements = create_cytoscape_elements(build_result.graph, metrics, anomalies, highlighted_nodes=highlighted)
-        stylesheet = create_cytoscape_stylesheet()
+        stylesheet = create_cytoscape_stylesheet(color_mode=color_mode or "anomaly")
         layout = {"name": layout_name, "animate": True, "fit": True, "padding": 40, "randomize": False}
         degree_fig = create_degree_distribution(metrics)
         centrality_fig = create_centrality_distribution(metrics)
@@ -252,7 +253,9 @@ def register_callbacks(app) -> None:
             html.Div(f"Degree: {int(row['degree'])}"),
             html.Div(f"Degree Centrality: {row['degree_centrality']:.4f}"),
             html.Div(f"Betweenness Centrality: {row['betweenness_centrality']:.4f}"),
+            html.Div(f"Eigenvector Centrality: {row['eigenvector_centrality']:.4f}"),
             html.Div(f"PageRank: {row['pagerank']:.4f}"),
+            html.Div(f"Community: {int(row['community_id'])}"),
             html.Div(f"Neighbours: {neighbours}"),
             html.Div(f"Anomaly Score: {float(anomaly['anomaly_score']):.4f}" if anomaly is not None else "Anomaly Score: 0.0000"),
             html.Div(f"Reason Flagged: {anomaly['reason_flagged']}" if anomaly is not None else "Reason Flagged: None"),

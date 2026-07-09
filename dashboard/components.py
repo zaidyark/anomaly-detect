@@ -74,6 +74,17 @@ def sidebar_controls() -> dbc.Card:
                     marks={0.2: "0.2", 0.4: "0.4", 0.6: "0.6", 0.8: "0.8"},
                     tooltip={"placement": "bottom", "always_visible": False},
                 ),
+                html.Div("Color nodes by", className="control-label"),
+                dcc.Dropdown(
+                    id="color-mode-select",
+                    className="dash-dropdown mb-3",
+                    options=[
+                        {"label": "Anomaly Severity", "value": "anomaly"},
+                        {"label": "Community", "value": "community"},
+                    ],
+                    value="anomaly",
+                    clearable=False,
+                ),
                 html.Div("Graph layout", className="control-label mt-3"),
                 dcc.Dropdown(
                     id="layout-select",

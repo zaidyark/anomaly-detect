@@ -21,8 +21,9 @@ def test_metrics_include_expected_columns():
     metrics = compute_node_metrics(graph, frame)
     stats = compute_graph_statistics(graph)
 
-    assert {"node", "degree", "pagerank", "clustering_coefficient"}.issubset(metrics.columns)
+    assert {"node", "degree", "pagerank", "clustering_coefficient", "community_id"}.issubset(metrics.columns)
     assert stats.nodes == 3
     assert stats.edges == 3
     assert stats.density > 0
+    assert metrics["community_id"].notna().all()
 

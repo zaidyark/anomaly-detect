@@ -34,6 +34,21 @@ def _component_map(graph: nx.Graph) -> dict[str, int]:
     return mapping
 
 
+def _community_map(graph: nx.Graph) -> dict[str, int]:
+    if graph.number_of_nodes() == 0:
+        return {}
+    undirected = graph.to_undirected() if graph.is_directed() else graph
+    try:
+        communities = nx.community.louvain_communities(undirected, seed=42)
+    except Exception:
+        communities = [{node} for node in undirected.nodes]
+    mapping: dict[str, int] = {}
+    for index, community in enumerate(communities):
+        for node in community:
+            mapping[str(node)] = index
+    return mapping
+
+
 def _safe_eigenvector_centrality(graph: nx.Graph) -> dict[str, float]:
     try:
         if graph.number_of_nodes() == 0:
@@ -82,6 +97,7 @@ def compute_node_metrics(graph: nx.Graph, edge_frame: pd.DataFrame | None = None
                 "unique_neighbours",
                 "new_neighbour_ratio",
                 "is_bridge",
+                "community_id",
             ]
         )
 
@@ -103,6 +119,7 @@ def compute_node_metrics(graph: nx.Graph, edge_frame: pd.DataFrame | None = None
     eigenvector = _safe_eigenvector_centrality(graph)
     component_map = _component_map(graph)
     component_sizes = Counter(component_map.values())
+    community_map = _community_map(graph)
     bridge_nodes: set[str] = set()
     if not graph.is_directed():
         bridge_nodes = {str(node) for edge in nx.bridges(graph) for node in edge}
@@ -153,6 +170,7 @@ def compute_node_metrics(graph: nx.Graph, edge_frame: pd.DataFrame | None = None
                 "unique_neighbours": int(unique_neighbour_counts.get(node_name, 0)),
                 "new_neighbour_ratio": float(new_neighbour_ratio.get(node_name, 0.0)),
                 "is_bridge": int(node_name in bridge_nodes),
+                "community_id": int(community_map.get(node_name, 0)),
             }
         )
 

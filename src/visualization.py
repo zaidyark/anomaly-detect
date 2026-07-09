@@ -13,6 +13,12 @@ import plotly.graph_objects as go
 import plotly.io as pio
 
 
+COMMUNITY_PALETTE = (
+    "#3da9fc", "#00d4a6", "#ffd166", "#ff5c7a", "#c792ea",
+    "#f78c6c", "#82aaff", "#c3e88d", "#f07178", "#89ddff",
+)
+
+
 def _node_score_lookup(anomalies: pd.DataFrame | None) -> dict[str, float]:
     if anomalies is None or anomalies.empty:
         return {}
@@ -45,6 +51,7 @@ def create_cytoscape_elements(
         node_name = str(node)
         metric_row = metrics_lookup.get(node_name, {})
         score = float(score_lookup.get(node_name, 0.0))
+        community_id = int(metric_row.get("community_id", 0))
         classes: list[str] = []
         if score >= 0.75:
             classes.append("anomaly")
@@ -52,6 +59,7 @@ def create_cytoscape_elements(
             classes.append("warning")
         else:
             classes.append("normal")
+        classes.append(f"community-{community_id % len(COMMUNITY_PALETTE)}")
         if node_name in highlighted:
             classes.append("selected")
         elements.append(
@@ -64,6 +72,7 @@ def create_cytoscape_elements(
                     "pagerank": round(float(metric_row.get("pagerank", 0.0)), 4),
                     "score": round(score, 4),
                     "component": int(metric_row.get("component_id", 0)),
+                    "community": community_id,
                     "reason": str(metric_row.get("reason_flagged", "")),
                 },
                 "classes": " ".join(classes),
@@ -83,9 +92,13 @@ def create_cytoscape_elements(
     return elements
 
 
-def create_cytoscape_stylesheet() -> list[dict]:
-    """Create the Cytoscape stylesheet for the graph canvas."""
-    return [
+def create_cytoscape_stylesheet(color_mode: str = "anomaly") -> list[dict]:
+    """Create the Cytoscape stylesheet for the graph canvas.
+
+    ``color_mode`` is either ``"anomaly"`` (color by anomaly severity) or
+    ``"community"`` (color by detected community membership).
+    """
+    stylesheet: list[dict] = [
         {
             "selector": "node",
             "style": {
@@ -101,14 +114,31 @@ def create_cytoscape_stylesheet() -> list[dict]:
                 "border-color": "#9cccf5",
             },
         },
-        {
-            "selector": "node.warning",
-            "style": {"background-color": "#ffd166", "border-color": "#f4b942"},
-        },
-        {
-            "selector": "node.anomaly",
-            "style": {"background-color": "#ff5c7a", "border-color": "#ff91a4"},
-        },
+    ]
+
+    if color_mode == "community":
+        for index, color in enumerate(COMMUNITY_PALETTE):
+            stylesheet.append(
+                {
+                    "selector": f"node.community-{index}",
+                    "style": {"background-color": color, "border-color": color},
+                }
+            )
+    else:
+        stylesheet.append(
+            {
+                "selector": "node.warning",
+                "style": {"background-color": "#ffd166", "border-color": "#f4b942"},
+            }
+        )
+        stylesheet.append(
+            {
+                "selector": "node.anomaly",
+                "style": {"background-color": "#ff5c7a", "border-color": "#ff91a4"},
+            }
+        )
+
+    stylesheet.append(
         {
             "selector": "node.selected",
             "style": {
@@ -118,7 +148,9 @@ def create_cytoscape_stylesheet() -> list[dict]:
                 "shadow-color": "#7dd3fc",
                 "shadow-opacity": 0.5,
             },
-        },
+        }
+    )
+    stylesheet.append(
         {
             "selector": "edge",
             "style": {
@@ -129,8 +161,9 @@ def create_cytoscape_stylesheet() -> list[dict]:
                 "curve-style": "bezier",
                 "opacity": 0.8,
             },
-        },
-    ]
+        }
+    )
+    return stylesheet
 
 
 def create_network_figure(
