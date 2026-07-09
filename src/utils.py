@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from io import StringIO
 from pathlib import Path
 from typing import Any
 
@@ -25,10 +26,9 @@ def json_to_dataframe(data: str) -> pd.DataFrame:
     """Deserialize a dataframe from JSON records."""
     if not data:
         return pd.DataFrame()
-    return pd.read_json(data, orient="records")
+    return pd.read_json(StringIO(data), orient="records")
 
 
 def dump_json(payload: dict[str, Any]) -> str:
     """Dump a JSON payload with stable formatting."""
     return json.dumps(payload, indent=2, sort_keys=True, default=str)
-

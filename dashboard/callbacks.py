@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import base64
 from io import BytesIO
+from io import StringIO
 from pathlib import Path
 
 import pandas as pd
@@ -29,6 +30,13 @@ from src.visualization import (
 
 def _default_dataset_path() -> Path:
     return Path("data/sample_network.csv")
+
+
+def _read_json_frame(payload: str | None) -> pd.DataFrame:
+    """Read a dataframe stored as a JSON string in Dash state."""
+    if not payload:
+        return pd.DataFrame()
+    return pd.read_json(StringIO(payload), orient="records")
 
 
 def _build_payload(frame: pd.DataFrame, directed: bool) -> dict:
@@ -127,7 +135,7 @@ def register_callbacks(app) -> None:
         if not metrics_json:
             raise PreventUpdate
 
-        metrics = pd.read_json(metrics_json)
+        metrics = _read_json_frame(metrics_json)
         detection = detect_anomalies(metrics, algorithm=algorithm, threshold=threshold).frame
         return detection.to_json(orient="records", date_format="iso"), str(int(detection["anomaly_label"].sum()))
 
@@ -152,9 +160,9 @@ def register_callbacks(app) -> None:
         if not network_payload or not metrics_json or not anomalies_json:
             raise PreventUpdate
 
-        edges = pd.read_json(network_payload["edges"])
-        metrics = pd.read_json(metrics_json)
-        anomalies = pd.read_json(anomalies_json)
+        edges = _read_json_frame(network_payload["edges"])
+        metrics = _read_json_frame(metrics_json)
+        anomalies = _read_json_frame(anomalies_json)
         build_result = build_graph(edges, directed=bool(network_payload.get("directed", False)))
         highlighted = anomalies.query("anomaly_label == 1")["node"].tolist()
         if selected_node:
@@ -216,9 +224,9 @@ def register_callbacks(app) -> None:
         if not selected_node or not metrics_json or not anomalies_json:
             return "No node selected", "Click a node or select a table row."
 
-        metrics = pd.read_json(metrics_json)
-        anomalies = pd.read_json(anomalies_json)
-        edges = pd.read_json(network_payload["edges"]) if network_payload else pd.DataFrame()
+        metrics = _read_json_frame(metrics_json)
+        anomalies = _read_json_frame(anomalies_json)
+        edges = _read_json_frame(network_payload["edges"]) if network_payload else pd.DataFrame()
         metric_row = metrics.loc[metrics["node"] == selected_node]
         anomaly_row = anomalies.loc[anomalies["node"] == selected_node]
         if metric_row.empty:
@@ -261,9 +269,9 @@ def register_callbacks(app) -> None:
         if not n_clicks or not network_payload:
             raise PreventUpdate
 
-        edges = pd.read_json(network_payload["edges"])
-        metrics = pd.read_json(metrics_json) if metrics_json else pd.DataFrame()
-        anomalies = pd.read_json(anomalies_json) if anomalies_json else pd.DataFrame()
+        edges = _read_json_frame(network_payload["edges"])
+        metrics = _read_json_frame(metrics_json)
+        anomalies = _read_json_frame(anomalies_json)
 
         if export_format == "csv":
             return dcc.send_data_frame(anomalies.to_csv, "anomalies.csv", index=False)
