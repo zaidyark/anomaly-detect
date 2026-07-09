@@ -161,9 +161,25 @@ def register_callbacks(app) -> None:
         return detection.to_json(orient="records", date_format="iso"), str(int(detection["anomaly_label"].sum()))
 
     @app.callback(
+        Output("network-graph", "layout"),
+        Input("network-store", "data"),
+        Input("layout-select", "value"),
+    )
+    def refresh_layout(network_payload, layout_name):
+        if not network_payload:
+            raise PreventUpdate
+        return {
+            "name": layout_name,
+            "animate": True,
+            "fit": True,
+            "padding": 40,
+            "randomize": False,
+            "seed": 42,
+        }
+
+    @app.callback(
         Output("network-graph", "elements"),
         Output("network-graph", "stylesheet"),
-        Output("network-graph", "layout"),
         Output("degree-distribution", "figure"),
         Output("centrality-distribution", "figure"),
         Output("anomaly-histogram", "figure"),
@@ -174,11 +190,10 @@ def register_callbacks(app) -> None:
         Input("network-store", "data"),
         Input("metrics-store", "data"),
         Input("anomalies-store", "data"),
-        Input("layout-select", "value"),
         Input("selected-node-store", "data"),
         Input("color-mode-select", "value"),
     )
-    def refresh_visuals(network_payload, metrics_json, anomalies_json, layout_name, selected_node, color_mode):
+    def refresh_visuals(network_payload, metrics_json, anomalies_json, selected_node, color_mode):
         if not network_payload or not metrics_json or not anomalies_json:
             raise PreventUpdate
 
@@ -191,7 +206,6 @@ def register_callbacks(app) -> None:
             highlighted.append(str(selected_node))
         elements = create_cytoscape_elements(build_result.graph, metrics, anomalies, highlighted_nodes=highlighted)
         stylesheet = create_cytoscape_stylesheet(color_mode=color_mode or "anomaly")
-        layout = {"name": layout_name, "animate": True, "fit": True, "padding": 40, "randomize": False}
         degree_fig = create_degree_distribution(metrics)
         centrality_fig = create_centrality_distribution(metrics)
         anomaly_subset = anomalies.query("anomaly_label == 1") if not anomalies.empty else anomalies
@@ -206,7 +220,6 @@ def register_callbacks(app) -> None:
         return (
             elements,
             stylesheet,
-            layout,
             degree_fig,
             centrality_fig,
             anomaly_fig,
