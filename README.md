@@ -36,8 +36,19 @@ pip install -r requirements.txt
 make run            # or make.bat run, or: python app.py
 ```
 
-Open the dashboard at `http://127.0.0.1:8050`. See `DEVELOPMENT.md` for the
-developer guide (architecture, callback map, extension recipes).
+Open the dashboard at `http://127.0.0.1:8050`.
+
+## Documentation
+
+Full documentation lives in [`docs/`](docs/README.md):
+
+- [Getting Started](docs/getting-started.md) — install, run, make targets
+- [User Guide](docs/user-guide.md) — dashboard tour, scenario ground truth, demo flow
+- [Architecture](docs/architecture.md) — code structure, data flow, callback map
+- [Detection & Evaluation](docs/detection-and-evaluation.md) — features, detectors, measured results
+- [Datasets](docs/datasets.md) — CSV format, CTU-13 conversion
+- [Extending](docs/extending.md) — add detectors, scenarios, metrics, charts
+- [Testing](docs/testing.md) and [Troubleshooting](docs/troubleshooting.md)
 
 ## Docker
 
