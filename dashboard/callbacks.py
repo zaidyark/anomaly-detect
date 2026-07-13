@@ -301,7 +301,11 @@ def register_callbacks(app) -> None:
             edge_frame=edges,
             threshold=float(threshold) if threshold is not None else 0.65,
         )
-        stylesheet = create_cytoscape_stylesheet(color_mode=color_mode or "anomaly")
+        stylesheet = create_cytoscape_stylesheet(
+            color_mode=color_mode or "anomaly",
+            compact=len(metrics) > 150,
+            max_degree=int(metrics["degree"].max()) if not metrics.empty else 20,
+        )
         degree_fig = create_degree_distribution(metrics)
         centrality_fig = create_centrality_distribution(metrics)
         anomaly_subset = anomalies.query("anomaly_label == 1") if not anomalies.empty else anomalies

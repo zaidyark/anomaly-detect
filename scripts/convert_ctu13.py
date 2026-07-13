@@ -26,8 +26,8 @@ from pathlib import Path
 import pandas as pd
 
 MAX_FLOWS_PER_BOT = 120
-MAX_BACKGROUND_FLOWS = 900
-NODE_BUDGET = 600
+MAX_BACKGROUND_FLOWS = 700
+NODE_BUDGET = 320
 SEED = 42
 
 

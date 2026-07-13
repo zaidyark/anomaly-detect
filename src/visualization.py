@@ -152,29 +152,46 @@ def create_cytoscape_elements(
     return elements
 
 
-def create_cytoscape_stylesheet(color_mode: str = "anomaly") -> list[dict]:
+def create_cytoscape_stylesheet(
+    color_mode: str = "anomaly",
+    compact: bool = False,
+    max_degree: int = 20,
+) -> list[dict]:
     """Create the Cytoscape stylesheet for the graph canvas.
 
     ``color_mode`` is either ``"anomaly"`` (color by anomaly severity) or
-    ``"community"`` (color by detected community membership).
+    ``"community"`` (color by detected community membership). ``compact``
+    shrinks nodes and hides labels on unflagged nodes so large graphs
+    (hundreds of hosts) stay readable; ``max_degree`` scales node sizing to
+    the actual degree range of the current graph.
     """
+    max_degree = max(1, int(max_degree))
+    min_size, max_size = (8, 34) if compact else (18, 64)
     stylesheet: list[dict] = [
         {
             "selector": "node",
             "style": {
                 "background-color": NODE_NORMAL,
-                "label": "data(label)",
+                "label": "" if compact else "data(label)",
                 "color": "#e5eef9",
-                "font-size": "11px",
+                "font-size": "9px" if compact else "11px",
                 "text-outline-width": 2,
                 "text-outline-color": "#07111f",
-                "width": "mapData(degree, 0, 20, 18, 64)",
-                "height": "mapData(degree, 0, 20, 18, 64)",
-                "border-width": 1.5,
+                "width": f"mapData(degree, 0, {max_degree}, {min_size}, {max_size})",
+                "height": f"mapData(degree, 0, {max_degree}, {min_size}, {max_size})",
+                "border-width": 1 if compact else 1.5,
                 "border-color": "#9cccf5",
             },
         },
     ]
+    if compact:
+        # Only anomalous and selected nodes get labels on large graphs.
+        stylesheet.append(
+            {
+                "selector": "node.anomaly, node.selected",
+                "style": {"label": "data(label)"},
+            }
+        )
 
     if color_mode == "community":
         for index, color in enumerate(COMMUNITY_PALETTE):

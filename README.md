@@ -97,15 +97,15 @@ slider and watching the trade-off.
 
 ### Real-data evaluation (CTU-13)
 
-`data/ctu13_scenario9.csv` is a 600-host slice of scenario 9 of the CTU-13 dataset
+`data/ctu13_scenario9.csv` is a 320-host slice of scenario 9 of the CTU-13 dataset
 (Garcia et al., 2014) — real traffic from the CTU University network with 10 hosts
 infected by the Neris botnet, labeled flow-by-flow in the original capture. The slice
-is produced reproducibly by `scripts/convert_ctu13.py`, which preserves every
-labeled-normal flow and each bot's fan-out signature. Headline result at the default
-threshold: **consensus voting catches all 10 bots with F1 = 0.83**, while the
-rule-based detector transfers poorly to real traffic (it flags the legitimate
-high-degree servers instead) — a useful demonstration that learned models generalize
-where hand-written rules do not.
+is produced reproducibly by `scripts/convert_ctu13.py`, which preserves each bot's
+fan-out signature alongside labeled-normal and background traffic. Headline results at
+the default threshold: **consensus voting catches all 10 bots with F1 = 0.87**
+(Isolation Forest and One-Class SVM match it individually), while the rule-based
+detector finds only 6 of 10 — precise but blind to the bots whose behaviour its rules
+don't encode, a useful demonstration of why the ML models and ensemble voting exist.
 
 To regenerate (or convert a different scenario), download a labeled `.binetflow`
 capture from the [CTU-13 dataset](https://www.stratosphereips.org/datasets-ctu13) and run:
