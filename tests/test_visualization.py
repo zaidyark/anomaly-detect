@@ -42,6 +42,23 @@ def test_highlighted_node_gets_selected_class():
     assert "selected" in node_a["classes"]
 
 
+def test_node_severity_follows_detection_labels_at_low_threshold():
+    graph, metrics = _sample_graph()
+    anomalies = pd.DataFrame(
+        [
+            {"node": "A", "anomaly_score": 0.3, "anomaly_label": 1},
+            {"node": "B", "anomaly_score": 0.16, "anomaly_label": 0},
+            {"node": "C", "anomaly_score": 0.05, "anomaly_label": 0},
+        ]
+    )
+    elements = create_cytoscape_elements(graph, metrics, anomalies, threshold=0.2)
+    classes = {el["data"]["id"]: el["classes"] for el in elements if "id" in el["data"]}
+
+    assert "anomaly" in classes["A"]  # flagged, even though its raw score is low
+    assert "warning" in classes["B"]  # unflagged but close to the threshold
+    assert "normal" in classes["C"]
+
+
 def test_stylesheet_modes_produce_different_rules():
     anomaly_stylesheet = create_cytoscape_stylesheet(color_mode="anomaly")
     community_stylesheet = create_cytoscape_stylesheet(color_mode="community")

@@ -15,7 +15,15 @@ from sklearn.svm import OneClassSVM
 from src.preprocessing import scale_features, select_feature_frame
 
 
-SUPPORTED_ALGORITHMS = ("rule_based", "isolation_forest", "local_outlier_factor", "one_class_svm")
+BASE_ALGORITHMS = ("rule_based", "isolation_forest", "local_outlier_factor", "one_class_svm")
+SUPPORTED_ALGORITHMS = BASE_ALGORITHMS + ("consensus",)
+
+ALGORITHM_DISPLAY_NAMES = {
+    "rule_based": "Rule-Based",
+    "isolation_forest": "Isolation Forest",
+    "local_outlier_factor": "LOF",
+    "one_class_svm": "One-Class SVM",
+}
 
 
 @dataclass(frozen=True)
@@ -109,6 +117,45 @@ def _model_detection(features: pd.DataFrame, algorithm: str) -> pd.DataFrame:
     return result
 
 
+def _consensus_detection(features: pd.DataFrame, threshold: float) -> pd.DataFrame:
+    """Run every base detector and combine them by majority vote.
+
+    A node's consensus score is the mean of the per-detector scores, and it is
+    flagged when at least half of the detectors flag it — high-confidence
+    anomalies are the ones several independent methods agree on.
+    """
+    votes = pd.Series(0, index=features.index, dtype=int)
+    score_sum = pd.Series(0.0, index=features.index, dtype=float)
+    flagged_by: dict[str, list[str]] = {str(node): [] for node in features["node"]}
+
+    for algorithm in BASE_ALGORITHMS:
+        result = detect_anomalies(features, algorithm=algorithm, threshold=threshold).frame
+        indexed = result.set_index("node")
+        aligned = indexed.reindex(features["node"].astype(str))
+        labels = aligned["anomaly_label"].fillna(0).astype(int).to_numpy()
+        votes += labels
+        score_sum += aligned["anomaly_score"].fillna(0.0).to_numpy()
+        for node, label in zip(features["node"].astype(str), labels):
+            if label:
+                flagged_by[node].append(ALGORITHM_DISPLAY_NAMES[algorithm])
+
+    frame = features.copy()
+    required_votes = max(2, len(BASE_ALGORITHMS) // 2)
+    frame["anomaly_score"] = score_sum / len(BASE_ALGORITHMS)
+    frame["detector_votes"] = votes.to_numpy()
+    frame["anomaly_label"] = (frame["detector_votes"] >= required_votes).astype(int)
+    frame["reason_flagged"] = [
+        (
+            f"Flagged by {len(flagged_by[node])} of {len(BASE_ALGORITHMS)} detectors: "
+            + ", ".join(flagged_by[node])
+        )
+        if flagged_by[node] and votes_count >= required_votes
+        else "Within expected behavior"
+        for node, votes_count in zip(frame["node"].astype(str), frame["detector_votes"])
+    ]
+    return frame
+
+
 def detect_anomalies(
     features: pd.DataFrame,
     algorithm: str = "rule_based",
@@ -122,7 +169,9 @@ def detect_anomalies(
         frame["reason_flagged"] = pd.Series(dtype=str)
         return DetectionResult(frame=frame, algorithm=algorithm)
 
-    if algorithm == "rule_based":
+    if algorithm == "consensus":
+        result = _consensus_detection(features, threshold=threshold)
+    elif algorithm == "rule_based":
         result = _rule_based_detection(features)
         result["anomaly_label"] = (result["anomaly_score"] >= threshold).astype(int)
         result.loc[result["anomaly_label"] == 0, "reason_flagged"] = "Within expected behavior"

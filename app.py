@@ -17,6 +17,7 @@ app = dash.Dash(
     external_stylesheets=[
         dbc.themes.CYBORG,
         "https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css",
+        "https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap",
     ],
     suppress_callback_exceptions=True,
     title="Graph-Based Network Anomaly Detection",
