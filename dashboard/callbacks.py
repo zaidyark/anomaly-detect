@@ -134,6 +134,22 @@ def register_callbacks(app) -> None:
         prevent_initial_call=True,
     )
 
+    app.clientside_callback(
+        """
+        function(n_clicks, current_class) {
+            if (!n_clicks) { return window.dash_clientside.no_update; }
+            const base = (current_class || "").replace("graph-card--fullscreen", "").trim();
+            const isFullscreen = (current_class || "").indexOf("graph-card--fullscreen") !== -1;
+            setTimeout(function() { window.dispatchEvent(new Event("resize")); }, 200);
+            return isFullscreen ? base : (base + " graph-card--fullscreen").trim();
+        }
+        """,
+        Output("graph-card", "className"),
+        Input("graph-fullscreen-btn", "n_clicks"),
+        State("graph-card", "className"),
+        prevent_initial_call=True,
+    )
+
     @app.callback(
         Output("scenario-select", "value"),
         Input("upload-data", "contents"),

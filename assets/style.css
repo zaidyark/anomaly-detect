@@ -300,6 +300,36 @@ html, body {
   flex-direction: column;
 }
 
+.graph-card--fullscreen {
+  position: fixed;
+  inset: 14px;
+  z-index: 1060;
+  height: auto;
+  box-shadow: 0 0 0 100vmax rgba(2, 8, 16, 0.72);
+}
+
+.graph-card--fullscreen > *:not(.graph-card-header) {
+  min-height: calc(100vh - 90px);
+}
+
+.graph-expand-btn {
+  background: none;
+  border: 1px solid var(--border-input);
+  color: var(--muted);
+  border-radius: 4px;
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1;
+  margin-left: 12px;
+}
+
+.graph-expand-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
 .graph-card > *:not(.graph-card-header) {
   flex: 1;
   min-height: 660px;

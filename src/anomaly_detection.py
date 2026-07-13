@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import warnings
 from dataclasses import dataclass
 from typing import Iterable
 
@@ -93,9 +94,17 @@ def _model_detection(features: pd.DataFrame, algorithm: str) -> pd.DataFrame:
         raw_scores = -model.score_samples(scaled)
         labels = (model.predict(scaled) == -1).astype(int)
     elif algorithm == "local_outlier_factor":
-        n_neighbors = min(20, max(2, len(scaled) - 1))
+        n_neighbors = min(35, max(2, len(scaled) - 1))
         model = LocalOutlierFactor(n_neighbors=n_neighbors, contamination=0.15)
-        labels = (model.fit_predict(scaled) == -1).astype(int)
+        # Real captures contain hundreds of quiet hosts with identical feature
+        # rows (degree 1, no centrality); LOF warns that duplicates blur its
+        # density estimate. Those hosts are exactly the uninteresting ones, so
+        # the warning is expected — suppress it rather than alarm the console.
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", message="Duplicate values are leading to incorrect results"
+            )
+            labels = (model.fit_predict(scaled) == -1).astype(int)
         raw_scores = -model.negative_outlier_factor_
     elif algorithm == "one_class_svm":
         model = OneClassSVM(kernel="rbf", nu=0.15, gamma="scale")
