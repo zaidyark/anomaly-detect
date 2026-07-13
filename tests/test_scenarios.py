@@ -37,6 +37,22 @@ def test_generation_is_deterministic():
     assert first.true_anomalies == second.true_anomalies
 
 
+def test_file_backed_scenarios_load_with_ground_truth():
+    file_backed = [
+        entry for entry in list_scenarios()
+        if entry["key"] not in {"scanner", "exfiltration", "rogue_bridge", "botnet"}
+    ]
+    if not file_backed:
+        pytest.skip("no converted real datasets present in data/")
+    for entry in file_backed:
+        result = generate_scenario(entry["key"])
+        frame = load_network_data(result.frame)
+        node_names = set(frame["source"].astype(str)) | set(frame["destination"].astype(str))
+        assert result.true_anomalies
+        for anomalous_node in result.true_anomalies:
+            assert anomalous_node in node_names
+
+
 def test_unknown_scenario_raises():
     with pytest.raises(ValueError):
         generate_scenario("does-not-exist")

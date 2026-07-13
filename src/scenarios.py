@@ -1,12 +1,22 @@
-"""Synthetic attack scenarios with ground-truth labels for detector evaluation."""
+"""Attack scenarios with ground-truth labels for detector evaluation.
+
+Two kinds: synthetic scenarios generated in code, and file-backed scenarios —
+real labeled captures converted by ``scripts/convert_ctu13.py``, discovered via
+``data/*.truth.json`` sidecar files.
+"""
 
 from __future__ import annotations
 
+import json
 import random
 from dataclasses import dataclass
 from datetime import datetime, timedelta
+from pathlib import Path
 
 import pandas as pd
+
+
+DATA_DIR = Path("data")
 
 
 BASE_TIME = datetime(2025, 3, 1, 8, 0, 0)
@@ -170,17 +180,52 @@ _SCENARIOS = {
 }
 
 
+def _file_backed_scenarios() -> dict[str, dict]:
+    """Discover converted real datasets: a CSV plus a .truth.json sidecar."""
+    entries: dict[str, dict] = {}
+    for truth_path in sorted(DATA_DIR.glob("*.truth.json")):
+        csv_path = truth_path.with_name(truth_path.name.replace(".truth.json", ".csv"))
+        if not csv_path.exists():
+            continue
+        try:
+            meta = json.loads(truth_path.read_text())
+        except (OSError, json.JSONDecodeError):
+            continue
+        if not meta.get("true_anomalies"):
+            continue
+        entries[csv_path.stem] = {
+            "name": meta.get("name", csv_path.stem),
+            "description": meta.get("description", ""),
+            "csv_path": csv_path,
+            "true_anomalies": tuple(str(node) for node in meta["true_anomalies"]),
+        }
+    return entries
+
+
 def list_scenarios() -> list[dict[str, str]]:
     """Return scenario metadata for building UI options."""
-    return [
+    entries = [
         {"key": key, "name": name, "description": description}
         for key, (name, description, _) in _SCENARIOS.items()
     ]
+    for key, meta in _file_backed_scenarios().items():
+        entries.append({"key": key, "name": meta["name"], "description": meta["description"]})
+    return entries
 
 
 def generate_scenario(key: str, seed: int = 42) -> ScenarioResult:
     """Generate a labelled dataset: normal office traffic plus one injected attack."""
     if key not in _SCENARIOS:
+        file_backed = _file_backed_scenarios()
+        if key in file_backed:
+            meta = file_backed[key]
+            return ScenarioResult(
+                key=key,
+                name=meta["name"],
+                description=meta["description"],
+                frame=pd.read_csv(meta["csv_path"]),
+                true_anomalies=meta["true_anomalies"],
+            )
         raise ValueError(f"Unknown scenario: {key}")
     name, description, inject = _SCENARIOS[key]
     rng = random.Random(seed)

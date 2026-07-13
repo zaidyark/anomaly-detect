@@ -88,10 +88,34 @@ known attack injected into the last quarter of the capture window:
 | Data Exfiltration Hub | Many machines funnel data into a staging host | Sudden high-degree hub |
 | Rogue Bridge Device | Unauthorized AP links an IoT segment to the LAN | Bridge edge, low clustering |
 | Botnet Beaconing | Infected machines beacon to a C2 server and mesh | New clique spanning departments |
+| CTU-13 Real Botnet (Neris) | **Real** labeled botnet capture, 10 infected hosts | Spam/scan fan-out from infected machines |
 
-Because the anomalous devices are known by construction, the dashboard shows a
-**Detector Evaluation** panel with precision, recall, and F1 for every algorithm on
-the same features — try moving the threshold slider and watching the trade-off.
+Because the anomalous devices are known (injected by construction, or labeled in the
+original capture), the dashboard shows a **Detector Evaluation** panel with precision,
+recall, and F1 for every algorithm on the same features — try moving the threshold
+slider and watching the trade-off.
+
+### Real-data evaluation (CTU-13)
+
+`data/ctu13_scenario9.csv` is a 600-host slice of scenario 9 of the CTU-13 dataset
+(Garcia et al., 2014) — real traffic from the CTU University network with 10 hosts
+infected by the Neris botnet, labeled flow-by-flow in the original capture. The slice
+is produced reproducibly by `scripts/convert_ctu13.py`, which preserves every
+labeled-normal flow and each bot's fan-out signature. Headline result at the default
+threshold: **consensus voting catches all 10 bots with F1 = 0.83**, while the
+rule-based detector transfers poorly to real traffic (it flags the legitimate
+high-degree servers instead) — a useful demonstration that learned models generalize
+where hand-written rules do not.
+
+To regenerate (or convert a different scenario), download a labeled `.binetflow`
+capture from the [CTU-13 dataset](https://www.stratosphereips.org/datasets-ctu13) and run:
+
+```bash
+python scripts/convert_ctu13.py capture20110817.binetflow data/ctu13_scenario9.csv "CTU-13 Real Botnet (Neris)"
+```
+
+Any converted dataset dropped into `data/` with its `.truth.json` sidecar appears
+automatically in the Demo scenario dropdown.
 
 ## Screenshots
 
@@ -99,10 +123,12 @@ Add dashboard screenshots here once deployed or captured locally.
 
 ## Future Work
 
+- Flow-volume features (weighted degree, per-edge flow counts) — CTU-13 scenario 11
+  showed that DDoS bots hammering a single target are invisible to purely topological
+  features (degree 1 on a who-talks-to-whom graph); volume features would catch them
 - Session-aware timeline playback (beyond the current time-window filter)
 - Deeper community detection views
 - Shortest path investigation workflow
-- Evaluation on real public datasets (e.g., CTU-13, UNSW-NB15 flow samples)
 - Multi-tenant incident bookmarking
 - Authentication and persistence
 
