@@ -78,6 +78,12 @@ def build_layout() -> dbc.Container:
                                             html.Span("Bridge edge", className="legend-dot legend-dot--bridge"),
                                             html.Span("New edge", className="legend-dot legend-dot--new"),
                                             html.Button(
+                                                "FIT",
+                                                id="fit-view-btn",
+                                                className="graph-expand-btn graph-expand-btn--fit",
+                                                title="Fit the whole graph in view",
+                                            ),
+                                            html.Button(
                                                 "⛶",
                                                 id="graph-fullscreen-btn",
                                                 className="graph-expand-btn",
@@ -105,7 +111,7 @@ def build_layout() -> dbc.Container:
                                         "randomize": False,
                                         "seed": 42,
                                     },
-                                    minZoom=0.35,
+                                    minZoom=0.03,
                                     maxZoom=3.5,
                                     zoom=1,
                                     pan={"x": 0, "y": 0},

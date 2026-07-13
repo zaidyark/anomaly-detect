@@ -330,6 +330,13 @@ html, body {
   color: var(--accent);
 }
 
+.graph-expand-btn--fit {
+  width: auto;
+  padding: 0 8px;
+  font-size: 10px;
+  letter-spacing: 1px;
+}
+
 .graph-card > *:not(.graph-card-header) {
   flex: 1;
   min-height: 660px;

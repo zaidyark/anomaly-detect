@@ -268,8 +268,9 @@ def register_callbacks(app) -> None:
         Output("network-graph", "layout"),
         Input("network-store", "data"),
         Input("layout-select", "value"),
+        Input("fit-view-btn", "n_clicks"),
     )
-    def refresh_layout(network_payload, layout_name):
+    def refresh_layout(network_payload, layout_name, fit_clicks):
         if not network_payload:
             raise PreventUpdate
         return {
@@ -279,6 +280,9 @@ def register_callbacks(app) -> None:
             "padding": 40,
             "randomize": False,
             "seed": 42,
+            # Unknown keys are ignored by Cytoscape but make the dict differ
+            # per click, so pressing FIT re-runs the layout and re-fits.
+            "fitCount": int(fit_clicks or 0),
         }
 
     @app.callback(
