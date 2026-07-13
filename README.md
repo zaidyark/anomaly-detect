@@ -18,18 +18,26 @@ A lightweight SOC-style dashboard for detecting anomalous devices in computer ne
 ## Installation
 
 ```bash
+make install        # Linux / macOS
+make.bat install    # Windows
+```
+
+Or manually:
+
+```bash
 python -m venv .venv
-source .venv/bin/activate
+source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
 ## Running locally
 
 ```bash
-python app.py
+make run            # or make.bat run, or: python app.py
 ```
 
-Open the dashboard at `http://127.0.0.1:8050`.
+Open the dashboard at `http://127.0.0.1:8050`. See `DEVELOPMENT.md` for the
+developer guide (architecture, callback map, extension recipes).
 
 ## Docker
 
