@@ -39,7 +39,7 @@ Every algorithm receives the same feature frame and must return it plus:
 `detect_anomalies()` (in `src/anomaly_detection.py`) dispatches on the
 `algorithm` string, re-applies the threshold uniformly, and sorts flagged-first.
 
-## The five detectors
+## The six detectors
 
 | Key | Method | Notes |
 |---|---|---|
@@ -48,6 +48,7 @@ Every algorithm receives the same feature frame and must return it plus:
 | `local_outlier_factor` | `sklearn.neighbors.LocalOutlierFactor`, 35 neighbors | Local-density based; its duplicate-values warning is expected on real captures (many identical quiet hosts) and suppressed |
 | `one_class_svm` | `sklearn.svm.OneClassSVM`, RBF kernel | Tight boundary around "normal"; tends to over-flag |
 | `consensus` | Runs all four above; score = mean, flagged on ≥ 2 votes | `reason_flagged` lists which detectors voted; adds a `detector_votes` column |
+| `lightweight_gnn` | Hand-rolled 2-layer GCN autoencoder, plain PyTorch (no PyTorch Geometric); scores by feature-reconstruction error | Unsupervised, small by design (224 params, <1 KB); needs the graph, not just features — see [Lightweight GNN](lightweight-gnn.md) |
 
 ## Evaluation
 
@@ -55,8 +56,9 @@ When ground truth exists (demo scenario or converted real dataset),
 `src/evaluation.py` scores detections:
 
 - `evaluate_detection(result, truth)` → TP, FP, FN, precision, recall, F1
-- `compare_algorithms(metrics, truth, threshold)` → one row per detector, all
-  run on **identical features** so the comparison is fair
+- `compare_algorithms(metrics, truth, threshold, graph=None)` → one row per
+  detector, all run on **identical features** so the comparison is fair.
+  Pass `graph` to include `lightweight_gnn` — it is silently skipped without one.
 
 Precision = TP / (TP+FP) (low = alert fatigue). Recall = TP / (TP+FN)
 (low = missed intrusions). F1 = harmonic mean of both.
@@ -72,13 +74,23 @@ Measured at the default threshold 0.65 (regenerate with the code in
 - **CTU-13 scenario 9 (real, 10 bots)**: Consensus F1 ≈ 0.87 with recall 1.0;
   Isolation Forest and One-Class SVM similar; Rule-Based catches 6/10 with
   precision 1.0 — precise but blind to patterns its rules don't encode.
+- **IoT-23 scenario 3-1 (real, port scan)**: Lightweight GNN ties the best
+  classical detectors at F1 = 0.667. On CTU-13 it fails at the default
+  threshold for a documented, reproducible reason — see
+  [Lightweight GNN](lightweight-gnn.md#measured-results).
 
-### Known limitation
+### Known limitations
 
 Purely topological features cannot see **volume-based** attacks: CTU-13
 scenario 11's DDoS bots send thousands of flows to a *single* target — degree 1
 on a who-talks-to-whom graph. Flow-volume features (weighted degree, per-edge
 flow counts) are the documented future-work fix.
+
+Unsupervised structural/statistical detectors — the rule-based detector and
+the Lightweight GNN alike — can mistake a legitimate, busy server for the real
+threat, because both score "how unusual is this node's structural position,"
+not "is this node malicious." Both hit this on CTU-13 scenario 9 independently;
+see each detector's own writeup for the specifics.
 
 ## Determinism
 

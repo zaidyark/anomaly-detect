@@ -42,7 +42,7 @@ def test_no_flags_yields_zero_scores():
     assert scores["f1"] == 0.0
 
 
-def test_compare_algorithms_covers_every_detector():
+def test_compare_algorithms_skips_gnn_without_a_graph():
     scenario = generate_scenario("scanner")
     frame = load_network_data(scenario.frame)
     build_result = build_graph(frame)
@@ -50,7 +50,22 @@ def test_compare_algorithms_covers_every_detector():
 
     evaluation = compare_algorithms(metrics, scenario.true_anomalies, threshold=0.65)
 
-    assert len(evaluation) == len(SUPPORTED_ALGORITHMS)
+    assert len(evaluation) == len(SUPPORTED_ALGORITHMS) - 1  # lightweight_gnn needs a graph
+    assert "Lightweight GNN" not in evaluation["algorithm"].tolist()
     for column in ("algorithm", "precision", "recall", "f1", "flagged"):
         assert column in evaluation.columns
     assert evaluation["recall"].max() > 0
+
+
+def test_compare_algorithms_covers_every_detector_with_a_graph():
+    scenario = generate_scenario("scanner")
+    frame = load_network_data(scenario.frame)
+    build_result = build_graph(frame)
+    metrics = compute_node_metrics(build_result.graph, build_result.edge_frame)
+
+    evaluation = compare_algorithms(
+        metrics, scenario.true_anomalies, threshold=0.65, graph=build_result.graph
+    )
+
+    assert len(evaluation) == len(SUPPORTED_ALGORITHMS)
+    assert "Lightweight GNN" in evaluation["algorithm"].tolist()

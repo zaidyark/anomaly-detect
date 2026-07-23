@@ -1,0 +1,8 @@
+{
+  "name": "IoT-23 Real Botnet (Port Scan)",
+  "description": "Real IoT malware traffic from the IoT-23 dataset (Stratosphere Lab, CTU), sampled from iot23_sample.log. Infected IoT devices are labeled in the original capture; every benign flow sampled is genuine device traffic.",
+  "true_anomalies": [
+    "192.168.2.1",
+    "192.168.2.5"
+  ]
+}

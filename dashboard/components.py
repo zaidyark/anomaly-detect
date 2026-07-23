@@ -97,6 +97,7 @@ def sidebar_controls() -> dbc.Card:
                                 {"label": "Local Outlier Factor", "value": "local_outlier_factor"},
                                 {"label": "One-Class SVM", "value": "one_class_svm"},
                                 {"label": "Consensus (all detectors vote)", "value": "consensus"},
+                                {"label": "Lightweight GNN (GCN Autoencoder)", "value": "lightweight_gnn"},
                             ],
                             value="rule_based",
                             clearable=False,
@@ -275,6 +276,16 @@ def evaluation_section() -> html.Div:
                     ),
                 ],
                 className="g-3",
+            ),
+            html.Div(
+                id="resource-profile-card",
+                style={"display": "none"},
+                children=[
+                    dbc.Card(
+                        dbc.CardBody(html.Div(id="resource-profile-text", style={"fontSize": "13px"})),
+                        className="glass-card mb-3",
+                    ),
+                ],
             ),
         ],
     )

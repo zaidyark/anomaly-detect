@@ -1,3 +1,7 @@
+# CPU-only PyTorch wheels (the default PyPI build bundles a multi-GB CUDA
+# runtime we don't need — the lightweight GNN detector runs on CPU by design).
+--extra-index-url https://download.pytorch.org/whl/cpu
+
 dash>=2.17.0
 dash-bootstrap-components>=1.6.0
 dash-cytoscape>=1.0.2
@@ -9,4 +13,5 @@ scikit-learn>=1.5.1
 scipy>=1.14.0
 kaleido>=0.2.1
 pytest>=8.2.0
+torch>=2.5.0
 

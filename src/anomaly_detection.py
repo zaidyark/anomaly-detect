@@ -6,6 +6,7 @@ import warnings
 from dataclasses import dataclass
 from typing import Iterable
 
+import networkx as nx
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import IsolationForest
@@ -17,13 +18,14 @@ from src.preprocessing import scale_features, select_feature_frame
 
 
 BASE_ALGORITHMS = ("rule_based", "isolation_forest", "local_outlier_factor", "one_class_svm")
-SUPPORTED_ALGORITHMS = BASE_ALGORITHMS + ("consensus",)
+SUPPORTED_ALGORITHMS = BASE_ALGORITHMS + ("consensus", "lightweight_gnn")
 
 ALGORITHM_DISPLAY_NAMES = {
     "rule_based": "Rule-Based",
     "isolation_forest": "Isolation Forest",
     "local_outlier_factor": "LOF",
     "one_class_svm": "One-Class SVM",
+    "lightweight_gnn": "Lightweight GNN",
 }
 
 
@@ -169,8 +171,13 @@ def detect_anomalies(
     features: pd.DataFrame,
     algorithm: str = "rule_based",
     threshold: float = 0.65,
+    graph: nx.Graph | None = None,
 ) -> DetectionResult:
-    """Run anomaly detection on graph features."""
+    """Run anomaly detection on graph features.
+
+    ``graph`` is only required for ``"lightweight_gnn"``, which needs the
+    adjacency structure alongside the feature table.
+    """
     if features.empty:
         frame = features.copy()
         frame["anomaly_score"] = pd.Series(dtype=float)
@@ -189,6 +196,15 @@ def detect_anomalies(
         if threshold is not None:
             result["anomaly_label"] = (result["anomaly_score"] >= threshold).astype(int)
             result.loc[result["anomaly_label"] == 0, "reason_flagged"] = "Within expected behavior"
+    elif algorithm == "lightweight_gnn":
+        if graph is None:
+            raise ValueError("lightweight_gnn requires the graph (adjacency structure), not just features")
+        from src.gnn import gcn_autoencoder_detection  # deferred: torch is only needed here
+
+        result = gcn_autoencoder_detection(features, graph)
+        result["anomaly_label"] = (result["anomaly_score"] >= threshold).astype(int)
+        result.loc[result["anomaly_label"] == 1, "reason_flagged"] = "High GCN reconstruction error"
+        result.loc[result["anomaly_label"] == 0, "reason_flagged"] = "Within expected behavior"
     else:
         raise ValueError(f"Unsupported algorithm: {algorithm}")
 

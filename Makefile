@@ -6,7 +6,7 @@ VENV   := .venv
 PIP    := $(VENV)/bin/pip
 PY     := $(VENV)/bin/python
 
-.PHONY: help venv install run test test-verbose convert-ctu13 docker docker-down clean
+.PHONY: help venv install run test test-verbose convert-ctu13 convert-iot23 docker docker-down clean
 
 help: ## Show available targets
 	@grep -E '^[a-zA-Z0-9_-]+:.*## ' $(MAKEFILE_LIST) | awk -F ':.*## ' '{printf "  %-16s %s\n", $$1, $$2}'
@@ -32,6 +32,12 @@ ifndef CAPTURE
 	$(error Usage: make convert-ctu13 CAPTURE=path/to/capture.binetflow [OUT=data/name.csv] [NAME="Scenario name"])
 endif
 	$(PY) scripts/convert_ctu13.py $(CAPTURE) $(or $(OUT),data/ctu13_scenario9.csv) "$(or $(NAME),CTU-13 Real Botnet (Neris))"
+
+convert-iot23: ## Convert an IoT-23 conn.log.labeled: make convert-iot23 CAPTURE=path/to/conn.log.labeled
+ifndef CAPTURE
+	$(error Usage: make convert-iot23 CAPTURE=path/to/conn.log.labeled [OUT=data/name.csv] [NAME="Scenario name"])
+endif
+	$(PY) scripts/convert_iot23.py $(CAPTURE) $(or $(OUT),data/iot23_scenario3.csv) "$(or $(NAME),IoT-23 Real Botnet (Port Scan))"
 
 docker: ## Build and run with Docker Compose
 	docker compose up --build

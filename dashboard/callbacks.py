@@ -249,14 +249,19 @@ def register_callbacks(app) -> None:
         Input("metrics-store", "data"),
         Input("algorithm-select", "value"),
         Input("threshold-slider", "value"),
+        State("network-store", "data"),
         prevent_initial_call=False,
     )
-    def run_detection(n_clicks, metrics_json, algorithm, threshold):
+    def run_detection(n_clicks, metrics_json, algorithm, threshold, network_payload):
         if not metrics_json:
             raise PreventUpdate
 
         metrics = _read_json_frame(metrics_json)
-        detection = detect_anomalies(metrics, algorithm=algorithm, threshold=threshold).frame
+        graph = None
+        if algorithm == "lightweight_gnn" and network_payload:
+            edges = _read_json_frame(network_payload["edges"])
+            graph = build_graph(edges, directed=bool(network_payload.get("directed", False))).graph
+        detection = detect_anomalies(metrics, algorithm=algorithm, threshold=threshold, graph=graph).frame
         last_scan = f"LAST SCAN {datetime.now():%H:%M:%S}"
         return (
             detection.to_json(orient="records", date_format="iso"),
@@ -366,16 +371,24 @@ def register_callbacks(app) -> None:
         Output("evaluation-table", "data"),
         Output("evaluation-table", "columns"),
         Output("evaluation-chart", "figure"),
+        Output("resource-profile-card", "style"),
+        Output("resource-profile-text", "children"),
         Input("metrics-store", "data"),
         Input("ground-truth-store", "data"),
         Input("threshold-slider", "value"),
+        State("network-store", "data"),
     )
-    def update_evaluation(metrics_json, ground_truth, threshold):
+    def update_evaluation(metrics_json, ground_truth, threshold, network_payload):
         if not ground_truth or not metrics_json:
-            return {"display": "none"}, "", [], [], no_update
+            return {"display": "none"}, "", [], [], no_update, {"display": "none"}, ""
 
         metrics = _read_json_frame(metrics_json)
-        evaluation = compare_algorithms(metrics, ground_truth, threshold=threshold)
+        graph = None
+        if network_payload:
+            edges = _read_json_frame(network_payload["edges"])
+            graph = build_graph(edges, directed=bool(network_payload.get("directed", False))).graph
+
+        evaluation = compare_algorithms(metrics, ground_truth, threshold=threshold, graph=graph)
         figure = create_evaluation_chart(evaluation)
         display = evaluation.copy()
         for column in ("precision", "recall", "f1"):
@@ -396,7 +409,24 @@ def register_callbacks(app) -> None:
             f"{', '.join(ground_truth)}. Every detector ran on identical features at threshold "
             f"{float(threshold):.2f}, scored against that ground truth."
         )
-        return {}, summary, display.to_dict("records"), columns, figure
+
+        profile_style = {"display": "none"}
+        profile_text = ""
+        if graph is not None:
+            from src.gnn import gcn_autoencoder_with_profile
+
+            _result, profile = gcn_autoencoder_with_profile(metrics, graph)
+            profile_style = {}
+            fits_text = "fits comfortably within" if profile.fits_target_ram else "may exceed"
+            profile_text = (
+                f"Lightweight GNN resource profile (analytical estimate, measured on this machine — "
+                f"not physical hardware): {profile.parameter_count} parameters, "
+                f"{profile.model_size_kb:.2f} KB, {profile.inference_ms_per_node:.4f} ms/node inference "
+                f"for this {profile.graph_nodes}-node graph. This footprint {fits_text} the "
+                f"{profile.target_device}'s {profile.target_ram_mb} MB RAM budget."
+            )
+
+        return {}, summary, display.to_dict("records"), columns, figure, profile_style, profile_text
 
     @app.callback(
         Output("selected-node-store", "data"),

@@ -29,6 +29,8 @@ edge attributes.
 | `sample_network.csv` | Small hand-written office network — the default on startup |
 | `ctu13_scenario9.csv` | 320-host slice of real CTU-13 botnet traffic (see below) |
 | `ctu13_scenario9.truth.json` | Ground-truth sidecar: the 10 labeled infected hosts |
+| `iot23_scenario3.csv` | 320-host slice of real IoT-23 malware traffic (see below) |
+| `iot23_scenario3.truth.json` | Ground-truth sidecar: the labeled infected IoT device(s) |
 
 ## Synthetic scenarios
 
@@ -85,3 +87,38 @@ scenarios 1, 2, 9) suit this tool. Scenario 11's DDoS bots send thousands of
 flows to a single target — degree 1 on the graph — and are invisible to the
 current features (see the known limitation in
 [Detection & Evaluation](detection-and-evaluation.md)).
+
+## Converting IoT-23 captures
+
+The [IoT-23 dataset](https://www.stratosphereips.org/datasets-iot23)
+(Stratosphere Lab, CTU) contains real malware traffic captured from infected
+IoT devices, with every flow labeled Benign/Malicious plus a detailed
+attack-type label. Download a scenario's labeled `conn.log.labeled` (Zeek
+connection log) file — scenario 3-1 is a small (~24 MB), single-infected-device
+horizontal port scan, a clean first choice:
+
+```
+https://mcfp.felk.cvut.cz/publicDatasets/IoT-23-Dataset/IndividualScenarios/CTU-IoT-Malware-Capture-3-1/bro/conn.log.labeled
+```
+
+and convert it:
+
+```bash
+make convert-iot23 CAPTURE=conn.log.labeled OUT=data/my_slice.csv NAME="My Scenario"
+# Windows: make.bat convert-iot23 conn.log.labeled data\my_slice.csv "My Scenario"
+```
+
+What `scripts/convert_iot23.py` does — the same shape as the CTU-13 converter:
+
+- Parses Zeek's `conn.log.labeled` format, including its quirk of writing
+  `tunnel_parents`/`label`/`detailed-label` as one whitespace-separated group
+  instead of proper tab-delimited fields.
+- Detects infected devices from the flow labels (sources of `Malicious` flows)
+  — no hardcoding.
+- Samples up to `MAX_FLOWS_PER_BOT` (150) flows per infected device,
+  interleaved round-robin, same node-budget logic (320) as the CTU-13 converter.
+- Keeps benign flows up to `MAX_BENIGN_FLOWS` (700).
+- Writes the CSV plus the `.truth.json` sidecar.
+
+See [Lightweight GNN](lightweight-gnn.md) for the detector built specifically
+to be evaluated against this kind of real, labeled IoT traffic.

@@ -8,7 +8,12 @@ Step-by-step recipes for the common extension points. Read
 1. Implement it in `src/anomaly_detection.py` following the detector contract
    (`anomaly_score` in [0,1], `anomaly_label`, `reason_flagged` — see
    [Detection & Evaluation](detection-and-evaluation.md)). For sklearn-style
-   models, follow the pattern in `_model_detection`.
+   models, follow the pattern in `_model_detection`. If it needs the graph's
+   adjacency structure (not just the feature table), follow `lightweight_gnn`
+   instead — an optional `graph` parameter on `detect_anomalies()` and
+   `compare_algorithms()`, threaded through from `dashboard/callbacks.py`
+   wherever the algorithm might be selected (see
+   [Lightweight GNN](lightweight-gnn.md) and `src/gnn.py`).
 2. Register the dispatch branch in `detect_anomalies()`; add the key to
    `BASE_ALGORITHMS` if it should participate in consensus voting, and to
    `ALGORITHM_DISPLAY_NAMES`.

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Iterable
 
+import networkx as nx
 import pandas as pd
 
 from src.anomaly_detection import SUPPORTED_ALGORITHMS, detect_anomalies
@@ -15,6 +16,7 @@ ALGORITHM_LABELS = {
     "local_outlier_factor": "Local Outlier Factor",
     "one_class_svm": "One-Class SVM",
     "consensus": "Consensus",
+    "lightweight_gnn": "Lightweight GNN",
 }
 
 
@@ -55,12 +57,19 @@ def compare_algorithms(
     true_anomalies: Iterable[str],
     threshold: float = 0.65,
     algorithms: Iterable[str] = SUPPORTED_ALGORITHMS,
+    graph: nx.Graph | None = None,
 ) -> pd.DataFrame:
-    """Run every detector on the same features and score each against ground truth."""
+    """Run every detector on the same features and score each against ground truth.
+
+    ``graph`` is required for ``"lightweight_gnn"``, which is silently skipped
+    when no graph is supplied (it cannot run on features alone).
+    """
     truth = list(true_anomalies)
     records: list[dict] = []
     for algorithm in algorithms:
-        result = detect_anomalies(metrics, algorithm=algorithm, threshold=threshold).frame
+        if algorithm == "lightweight_gnn" and graph is None:
+            continue
+        result = detect_anomalies(metrics, algorithm=algorithm, threshold=threshold, graph=graph).frame
         scores = evaluate_detection(result, truth)
         records.append(
             {

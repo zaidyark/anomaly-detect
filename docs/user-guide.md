@@ -20,7 +20,7 @@ Three ways, in the sidebar:
 | Control | Effect |
 |---|---|
 | Directed graph | Rebuild as a directed graph (who *initiated* each connection matters) |
-| Algorithm selector | Rule-Based, Isolation Forest, Local Outlier Factor, One-Class SVM, or Consensus (all four vote; flagged on ≥2 votes) |
+| Algorithm selector | Rule-Based, Isolation Forest, Local Outlier Factor, One-Class SVM, Consensus (all four vote; flagged on ≥2 votes), or Lightweight GNN (a small GCN autoencoder — see [Lightweight GNN](lightweight-gnn.md)) |
 | Threshold | Score cutoff for flagging. Lower = more sensitive. Graph colors, table, KPIs, and evaluation all update live |
 | Time window (% of capture) | Keep only traffic inside the selected slice of the capture and re-run everything — slide to see the network before/after an attack begins |
 | Color nodes by | Anomaly severity (red/amber/blue) or community membership |
@@ -52,8 +52,12 @@ injected/labeled anomaly — so you can check the detector's answer.
 ## Detector Evaluation panel
 
 Appears only when ground truth exists (a demo scenario or converted real
-dataset is loaded). It runs **all five detectors on identical features** and
-scores each against the known anomalous nodes:
+dataset is loaded). It runs **all six detectors on identical features** and
+scores each against the known anomalous nodes. When the graph is available, a
+**resource profile** for the Lightweight GNN also appears below the table —
+its parameter count, model size, and inference latency, assessed against a
+Raspberry Pi Zero 2 W's RAM budget (see
+[Lightweight GNN](lightweight-gnn.md) for what that estimate does and doesn't cover):
 
 - **True Positives** — flagged nodes that really are attackers
 - **False Positives** — innocent devices wrongly flagged (false alarms)
@@ -73,7 +77,8 @@ precision/recall trade-off visible live.
 | Data Exfiltration Hub | `STAGING-01` | An unfamiliar hub receiving from ~14 machines, with a link to `EXT-198.51.100.7` |
 | Rogue Bridge Device | `ROGUE-AP` | Sole connector between the `IOT-CAM*` cluster and the LAN; dashed amber bridge edges |
 | Botnet Beaconing | `C2-SERVER` + `HR-PC2`, `ENG-PC5`, `ENG-PC7`, `FIN-PC3`, `FIN-PC5` | Cross-department mesh beaconing to the C2 node; hard at threshold 0.65, try ~0.5 |
-| CTU-13 Real Botnet (Neris) | 10 real infected IPs (`147.32.84.165`, `.191–.193`, `.204–.209`) | Real capture; consensus catches all 10 (F1 ≈ 0.87 at the default threshold) |
+| CTU-13 Real Botnet (Neris) | 10 real infected IPs (`147.32.84.165`, `.191–.193`, `.204–.209`) | Real capture; consensus catches all 10 (F1 ≈ 0.87 at the default threshold). Lightweight GNN misses at default threshold — a real, documented finding, see [Lightweight GNN](lightweight-gnn.md#measured-results) |
+| IoT-23 Real Botnet (Port Scan) | Real infected IoT device(s), e.g. `192.168.2.5` | Real IoT malware capture; a massive fan-out hub. Lightweight GNN ties the best classical detectors here (F1 ≈ 0.667) |
 
 Nodes *involved* in an attack but not compromised (e.g., the external IP, the
 IoT cameras) are intentionally not part of the ground truth.

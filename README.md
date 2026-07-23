@@ -95,6 +95,12 @@ PC2,PC4,2025-01-01 10:00:30,UDP
 - Local Outlier Factor
 - One-Class SVM
 - Consensus (all four detectors vote; a node is flagged when at least two agree)
+- Lightweight GNN — a hand-rolled 2-layer GCN autoencoder in plain PyTorch (no
+  PyTorch Geometric), 224 parameters / <1 KB, scored by feature-reconstruction
+  error. See [docs/lightweight-gnn.md](docs/lightweight-gnn.md) for the
+  architecture, its resource profile (assessed against a Raspberry Pi Zero 2 W's
+  RAM budget), and an honest account of where it does and doesn't beat the
+  classical detectors on real traffic.
 
 ## Demo Scenarios & Evaluation
 
@@ -108,6 +114,7 @@ known attack injected into the last quarter of the capture window:
 | Rogue Bridge Device | Unauthorized AP links an IoT segment to the LAN | Bridge edge, low clustering |
 | Botnet Beaconing | Infected machines beacon to a C2 server and mesh | New clique spanning departments |
 | CTU-13 Real Botnet (Neris) | **Real** labeled botnet capture, 10 infected hosts | Spam/scan fan-out from infected machines |
+| IoT-23 Real Botnet (Port Scan) | **Real** labeled IoT malware capture | Horizontal port scan from an infected IoT device |
 
 Because the anomalous devices are known (injected by construction, or labeled in the
 original capture), the dashboard shows a **Detector Evaluation** panel with precision,
@@ -135,6 +142,22 @@ python scripts/convert_ctu13.py capture20110817.binetflow data/ctu13_scenario9.c
 
 Any converted dataset dropped into `data/` with its `.truth.json` sidecar appears
 automatically in the Demo scenario dropdown.
+
+### Real-data evaluation (IoT-23)
+
+`data/iot23_scenario3.csv` is a 320-host slice of a real IoT-23 capture
+(Stratosphere Lab, CTU) — a genuinely infected IoT device running a horizontal
+port scan, labeled flow-by-flow in the original capture. Produced by
+`scripts/convert_iot23.py`. The **Lightweight GNN** detector was built and
+evaluated specifically against this dataset — see
+[docs/lightweight-gnn.md](docs/lightweight-gnn.md) for its architecture,
+measured results (ties the best classical detectors here, F1 ≈ 0.667), and an
+explicit account of how this differs from a full compressed-GNN-on-physical-hardware
+brief.
+
+```bash
+python scripts/convert_iot23.py conn.log.labeled data/iot23_scenario3.csv "IoT-23 Real Botnet (Port Scan)"
+```
 
 ## Screenshots
 

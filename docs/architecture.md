@@ -11,7 +11,8 @@ src/                    Pure-Python analytics core (no Dash imports — unit-tes
   graph_builder.py      DataFrame -> NetworkX graph
   metrics.py            Per-node metrics + graph-level statistics
   preprocessing.py      Feature selection & scaling for the ML models
-  anomaly_detection.py  The 5 detectors (rule-based, 3 sklearn models, consensus)
+  anomaly_detection.py  The 6 detectors (rule-based, 3 sklearn models, consensus, lightweight GNN)
+  gnn.py                Hand-rolled GCN autoencoder (plain PyTorch) + resource profiling
   scenarios.py          Synthetic attack generators + file-backed real datasets
   evaluation.py         Precision/recall/F1 scoring against ground truth
   visualization.py      Cytoscape elements/stylesheets + Plotly figures
@@ -21,8 +22,9 @@ dashboard/              Dash-specific code
   components.py         Reusable component builders (sidebar, stat cards, evaluation panel)
   callbacks.py          All interactivity — the only place callbacks are registered
 assets/style.css        All styling (Dash serves assets/ automatically)
-data/                   Bundled datasets (sample CSV, converted CTU-13 slice + .truth.json)
-scripts/convert_ctu13.py  Real-dataset converter (see docs/datasets.md)
+data/                   Bundled datasets (sample CSV, converted CTU-13 and IoT-23 slices + .truth.json)
+scripts/convert_ctu13.py  Real-dataset converters (see docs/datasets.md)
+scripts/convert_iot23.py
 tests/                  Pytest suite, one file per src module
 ```
 
@@ -46,8 +48,8 @@ src/graph_builder.py
       ▼                               bridges, new-neighbour ratio (early-75%/late-25% split)
 src/metrics.py
       │  detect_anomalies()           per-node anomaly_score (0-1), anomaly_label,
-      ▼                               reason_flagged; consensus mode runs all 4 and votes
-src/anomaly_detection.py
+      ▼                               reason_flagged; consensus mode runs all 4 and votes;
+src/anomaly_detection.py             lightweight_gnn needs the graph too (src/gnn.py)
       │  create_cytoscape_elements()  nodes classed normal/warning/anomaly; edges classed
       ▼  create_*() figures           bridge-edge / new-edge; 5 Plotly charts
 src/visualization.py
@@ -85,7 +87,10 @@ load_or_run          IN:  run-detection click, upload contents, directed-toggle,
                      previously uploaded file > bundled sample dataset.
 
 run_detection        IN:  metrics-store, algorithm-select, threshold-slider
+                          (State: network-store)
                      OUT: anomalies-store, anomaly KPI, last-scan label
+                     Builds the graph from network-store only when algorithm
+                     is lightweight_gnn — the classical detectors don't need it.
 
 refresh_layout       IN:  network-store, layout-select, fit-view-btn
                      OUT: network-graph.layout
@@ -104,9 +109,14 @@ refresh_visuals      IN:  network-store, metrics-store, anomalies-store,
                      on flagged/selected).
 
 update_evaluation    IN:  metrics-store, ground-truth-store, threshold-slider
-                     OUT: evaluation section visibility, summary, table, chart
-                     Runs compare_algorithms() (all 5 detectors) when ground
-                     truth exists; hidden otherwise.
+                          (State: network-store)
+                     OUT: evaluation section visibility, summary, table, chart,
+                          resource-profile card visibility + text
+                     Runs compare_algorithms() (all 6 detectors, graph included)
+                     when ground truth exists; hidden otherwise. Also runs the
+                     GNN once more standalone to report its resource profile
+                     (see docs/lightweight-gnn.md) — a second, cheap training
+                     pass, not reused from compare_algorithms' internal run.
 
 update_selected_node IN:  graph tap, table row selection, search box
                      OUT: selected-node-store

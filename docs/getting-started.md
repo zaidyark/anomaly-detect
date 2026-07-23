@@ -4,6 +4,9 @@
 
 - Python 3.11+ (developed on 3.13)
 - Optionally Docker + Docker Compose
+- `requirements.txt` installs a CPU-only PyTorch build for the Lightweight
+  GNN detector (via `--extra-index-url`, ~200 MB download) — no GPU or CUDA
+  needed, and no PyTorch Geometric or compiled graph-library extensions
 
 ## Quick start
 
