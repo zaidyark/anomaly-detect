@@ -10,6 +10,30 @@ make test-verbose                                # full output
 
 Windows: `make.bat test` / `make.bat test-verbose`.
 
+## Running the detector evaluation (CLI)
+
+`pytest` checks evaluation *arithmetic* against toy data; it does not print
+real detector accuracy. For that, run every detector against every
+scenario/dataset directly from the command line:
+
+```bash
+make evaluate                                          # every scenario, threshold 0.65
+make evaluate ARGS="--scenario ctu13_scenario9"        # one dataset
+make evaluate ARGS="--threshold 0.5 0.65 0.8"          # threshold sweep
+make evaluate ARGS="--no-gnn"                          # skip GNN training (faster)
+make evaluate ARGS="--output results.md"               # also write a Markdown report
+```
+
+Or directly: `.venv/bin/python scripts/run_evaluation.py --list` to see
+available scenario keys, `--help` for all options. Windows: `make.bat
+evaluate <args>` or `.venv\Scripts\python.exe scripts\run_evaluation.py`.
+
+This is the same pipeline the dashboard uses
+(`load_network_data` → `build_graph` → `compute_node_metrics` →
+`compare_algorithms`), so its numbers match what the "Detector Evaluation"
+panel shows for the same scenario and threshold — it just doesn't need a
+browser, which makes it the source for the results tables in Chapter Four.
+
 ## Suite layout
 
 One test file per `src/` module:

@@ -6,7 +6,7 @@ VENV   := .venv
 PIP    := $(VENV)/bin/pip
 PY     := $(VENV)/bin/python
 
-.PHONY: help venv install run test test-verbose convert-ctu13 convert-iot23 docker docker-down clean
+.PHONY: help venv install run test test-verbose evaluate convert-ctu13 convert-iot23 docker docker-down clean
 
 help: ## Show available targets
 	@grep -E '^[a-zA-Z0-9_-]+:.*## ' $(MAKEFILE_LIST) | awk -F ':.*## ' '{printf "  %-16s %s\n", $$1, $$2}'
@@ -26,6 +26,9 @@ test: ## Run the test suite
 
 test-verbose: ## Run the test suite with full output
 	$(PY) -m pytest tests/ -v
+
+evaluate: ## Run every detector against every scenario/dataset from the CLI: make evaluate [ARGS="--no-gnn"]
+	$(PY) scripts/run_evaluation.py $(ARGS)
 
 convert-ctu13: ## Convert a CTU-13 capture: make convert-ctu13 CAPTURE=path/to/file.binetflow
 ifndef CAPTURE

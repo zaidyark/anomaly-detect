@@ -14,6 +14,7 @@ if /I "%~1"=="install" goto install
 if /I "%~1"=="run" goto run
 if /I "%~1"=="test" goto test
 if /I "%~1"=="test-verbose" goto test_verbose
+if /I "%~1"=="evaluate" goto evaluate
 if /I "%~1"=="convert-ctu13" goto convert_ctu13
 if /I "%~1"=="convert-iot23" goto convert_iot23
 if /I "%~1"=="docker" goto docker
@@ -29,6 +30,7 @@ echo   install         Create the venv and install dependencies
 echo   run             Start the dashboard at http://127.0.0.1:8050
 echo   test            Run the test suite
 echo   test-verbose    Run the test suite with full output
+echo   evaluate        Run every detector against every scenario/dataset from the CLI
 echo   convert-ctu13   Convert a CTU-13 capture: make.bat convert-ctu13 path\to\file.binetflow [out.csv] ["Name"]
 echo   convert-iot23   Convert an IoT-23 conn.log.labeled: make.bat convert-iot23 path\to\conn.log.labeled [out.csv] ["Name"]
 echo   docker          Build and run with Docker Compose
@@ -56,6 +58,10 @@ goto :eof
 
 :test_verbose
 %PY% -m pytest tests/ -v
+goto :eof
+
+:evaluate
+%PY% scripts\run_evaluation.py %2 %3 %4 %5 %6 %7 %8 %9
 goto :eof
 
 :convert_ctu13
