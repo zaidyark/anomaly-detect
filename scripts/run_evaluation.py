@@ -18,7 +18,7 @@ Usage (run from the project root so ``data/*.truth.json`` resolves):
     .venv/bin/python scripts/run_evaluation.py --scenario scanner botnet
     .venv/bin/python scripts/run_evaluation.py --threshold 0.5 0.65 0.8
     .venv/bin/python scripts/run_evaluation.py --no-gnn            # skip GNN training (faster)
-    .venv/bin/python scripts/run_evaluation.py --output misc/chapter4_figures/evaluation_results.md
+    .venv/bin/python scripts/run_evaluation.py --output report/chapter4_figures/evaluation_results.md
 
 Or via ``make evaluate`` / ``make.bat evaluate`` (see the Makefile).
 """
