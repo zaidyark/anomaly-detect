@@ -14,3 +14,7 @@ htmlcov/
 .DS_Store
 *.log
 
+# Local dev tool (e.g. for tunnelling the dashboard during a demo) --
+# not project code, was accidentally committed once; never again.
+/cloudflared
+
